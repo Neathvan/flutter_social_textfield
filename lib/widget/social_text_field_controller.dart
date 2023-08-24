@@ -81,9 +81,10 @@ class _DefaultSocialTextFieldControllerState
     _subscribeToStreamIfNeeded();
   }
 
-  void _subscribeToStreamIfNeeded() async{
+  void _subscribeToStreamIfNeeded() async {
     await _streamSubscription?.cancel();
-    _streamSubscription = widget.textEditingController.subscribeToDetection(onDetectContent);
+    _streamSubscription =
+        widget.textEditingController.subscribeToDetection(onDetectContent);
   }
 
   ///Shows the widget that hes been set with the [widget.detectionBuilders]. return empty Container if noting found
