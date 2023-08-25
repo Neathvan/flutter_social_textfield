@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_social_textfield/controller/social_text_editing_controller.dart';
@@ -71,7 +72,9 @@ class _GnkTextFieldCustomizeScreenState
       ),
       body: Column(
         children: [
-          Text(_textEditingController.mentionHandleNames.toString()),
+          Text(_textEditingController.mentionHandleNames
+              .map((e) => e.toJson())
+              .toString()),
           Expanded(
             child: DefaultSocialTextFieldController(
               detectionPresentationMode: DetectionPresentationMode.split_screen,
@@ -87,11 +90,9 @@ class _GnkTextFieldCustomizeScreenState
                   autofocus: true,
                   controller: _textEditingController,
                   onChanged: (value) {
-                    // _textEditingController.mentionHandleName.addAll(["Text"]);
-
-                    // setState(() {
-                    //   mentionUser = _textEditingController.mentionHandleName;
-                    // });
+                    log(_textEditingController.value.text);
+                    // log(_textEditingController.value.selection.start
+                    //     .toString());
                   },
                   maxLines: null,
                   minLines: null,
@@ -145,15 +146,15 @@ class _GnkTextFieldCustomizeScreenState
             itemBuilder: (context, index) => ListTile(
                   title: Text("@user_$index"),
                   onTap: () {
+                    setState(() {
+                      // _textEditingController
+                      _textEditingController.mentionHandleNames
+                          .add(HandleTextWithRang(handleText: 'user_$index'));
+                    });
                     _textEditingController.replaceRange(
                         "@user_$index", lastDetection.range);
                     // _textEditingController.setMentionHandleNames =
                     //     'user_$index';
-
-                    setState(() {
-                      _textEditingController.mentionHandleNames
-                          .add('user_$index');
-                    });
                   },
                 )),
       ),

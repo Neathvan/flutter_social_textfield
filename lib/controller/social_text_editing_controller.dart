@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -27,18 +28,18 @@ class SocialTextEditingController extends TextEditingController {
     super.dispose();
   }
 
-  List<String> mentionHandleNames = [];
+  List<HandleTextWithRang> mentionHandleNames = [];
 
   // Creating the getter method
   // to get input from Field/Property
-  List<String> get getMentionHandleNames {
+  List<HandleTextWithRang> get getMentionHandleNames {
     return mentionHandleNames;
   }
 
   // Creating the setter method
   // to set the input in Field/Property
-  set setMentionHandleNames(String name) {
-    mentionHandleNames.add(name);
+  set setMentionHandleNames(HandleTextWithRang name) {
+    // mentionHandleNames.add();
   }
 
   final Map<DetectedType, TextStyle> detectionTextStyles = Map();
@@ -64,16 +65,18 @@ class SocialTextEditingController extends TextEditingController {
   }
 
   void replaceRange(String newValue, TextRange range) {
-    // print("newValue: $newValue, range: $range: ${range.textInside(text)}");
     var newText = text.replaceRange(range.start, range.end, newValue);
     var newRange =
         TextRange(start: range.start, end: range.start + newValue.length);
-    // print("Updated Range Content: [${newRange.textAfter(newText)}], text length: ${newText.length}, ${newRange.end}");
     bool isAtTheEndOfText = (newRange.textAfter(newText) == " " &&
         newRange.end == newText.length - 1);
     if (isAtTheEndOfText) {
       newText += " ";
     }
+    // print("newRange $newRange");
+
+    // print(mentionHandleNames.last.textRange = newRange);
+    mentionHandleNames.last.textRange = newRange;
     TextSelection newTextSelection = TextSelection(
         baseOffset: newRange.end + 1, extentOffset: newRange.end + 1);
     value = value.copyWith(text: newText, selection: newTextSelection);
@@ -130,11 +133,21 @@ class SocialTextEditingController extends TextEditingController {
       {required BuildContext context,
       TextStyle? style,
       required bool withComposing}) {
-    return SocialTextSpanBuilder(
-            regularExpressions: _regularExpressions,
-            defaultTextStyle: style,
-            mentionHandleNames: getMentionHandleNames,
-            detectionTextStyles: detectionTextStyles)
-        .build(text);
+    var s = SocialTextSpanBuilder(
+        regularExpressions: _regularExpressions,
+        defaultTextStyle: style,
+        mentionHandleNames: getMentionHandleNames,
+        detectionTextStyles: detectionTextStyles);
+
+    return s.build(text);
   }
+}
+
+class HandleTextWithRang {
+  String handleText;
+  TextRange? textRange;
+
+  HandleTextWithRang({required this.handleText, this.textRange});
+
+  toJson() => {'hande': handleText, 'start': textRange};
 }

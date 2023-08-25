@@ -1,9 +1,12 @@
 import 'dart:developer';
-
+import 'package:flutter_social_textfield/util/regular_expressions.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_social_textfield/model/detected_type_enum.dart';
 import 'package:flutter_social_textfield/model/social_content_detection_model.dart';
+
+import '../controller/social_text_editing_controller.dart';
 
 ///Builds [TextSpan] with the provided regular expression, stles and text.
 /// [defaultTextStyle] Optional default textstyle. used for detection types that has not been initialied
@@ -16,11 +19,13 @@ class SocialTextSpanBuilder {
   final TextStyle? defaultTextStyle;
   final TextStyle? ignoredTextStyle;
   final Map<DetectedType, TextStyle> detectionTextStyles;
-  List<String>? mentionHandleNames = [];
+  final ValueChanged<String>? onChange;
+  List<HandleTextWithRang>? mentionHandleNames = [];
 
   final Map<DetectedType, RegExp> regularExpressions;
 
   Map<DetectedType, List<RegExpMatch>?> allMatches = Map();
+  String value = '';
 
   SocialTextSpanBuilder(
       {required this.regularExpressions,
@@ -28,6 +33,7 @@ class SocialTextSpanBuilder {
       this.mentionHandleNames,
       this.detectionTextStyles = const {},
       this.onTapDetection,
+      this.onChange,
       this.ignoredTextStyle});
 
   ///Gets Text Style for [start,end] range.
@@ -63,7 +69,10 @@ class SocialTextSpanBuilder {
       }
     });
     return MatchSearchResult(
-        textStyle ?? defaultTextStyle ?? TextStyle(), detectedType, text);
+        textStyle ?? defaultTextStyle ?? TextStyle(),
+        detectedType,
+        text,
+        TextRange(start: start == 0 ? 0 : start + 1, end: end));
   }
 
   ///returns TextSpan containing all formatted content.
@@ -83,21 +92,22 @@ class SocialTextSpanBuilder {
         .toList()
       ..sort((m1, m2) => m1.start.compareTo(m2.start));
     if (orderedMatches.isEmpty) {
+      // onChange!(value + text);
       return TextSpan(text: text, style: defaultTextStyle);
     }
+
     TextSpan root = TextSpan();
     int cursorPosition = 0;
     for (int i = 0; i < orderedMatches.length; i++) {
       var match = orderedMatches[i];
-      var subString = text.substring(match.start, match.end);
 
+      var subString = text.substring(match.start, match.end);
       bool willAddSpaceAtStart = subString.startsWith(
           " "); //Strangely, mention and hashtags start with an empty space, while web detections are correct
 
       var firstSearch = getTextStyleForRange(cursorPosition, match.start,
           ignoreCases: ignoreCases, includeOnlyCases: includeOnlyCases);
 
-      // log(">>>firstSearch ${firstSearch.text.toString()}");
       root = getTextSpan(
           root,
           text.substring(
@@ -117,26 +127,29 @@ class SocialTextSpanBuilder {
                 secondSearch.text));
           };
       }
+      TextStyle textStyle = secondSearch.textStyle;
+      String kText = text.substring(
+          match.start + (willAddSpaceAtStart ? 1 : 0), match.end);
 
-      //
-      TextStyle textStyle = secondSearch.type != DetectedType.mention ||
-              mentionHandleNames!
-                  .contains(secondSearch.text.trim().substring(1))
-          ? secondSearch.textStyle
-          : defaultTextStyle!;
-
-      root = getTextSpan(
-          root,
-          text.substring(
-              match.start + (willAddSpaceAtStart ? 1 : 0), match.end),
-          textStyle,
-          tapRecognizer: tapRecognizer2);
+      ///
+      // print(mentionHandleNames!.isNotEmpty);
+      if (secondSearch.type == DetectedType.mention) {
+        for (var e in mentionHandleNames!) {
+          if (e.textRange == secondSearch.textRange) {
+            // if (mentionHandleNames!.isNotEmpty) {
+            //   mentionHandleNames!.removeAt(1);
+            // }
+          }
+        }
+      }
+      root = getTextSpan(root, kText, textStyle, tapRecognizer: tapRecognizer2);
       cursorPosition = match.end;
     }
     if (cursorPosition < text.length - 1) {
       root = getTextSpan(root, text.substring(cursorPosition),
           getTextStyleForRange(cursorPosition, text.length).textStyle);
     }
+
     return root;
   }
 
@@ -165,6 +178,7 @@ class SocialTextSpanBuilder {
 class MatchSearchResult {
   final TextStyle textStyle;
   final DetectedType type;
-  final String text;
-  MatchSearchResult(this.textStyle, this.type, this.text);
+  String text;
+  TextRange textRange;
+  MatchSearchResult(this.textStyle, this.type, this.text, this.textRange);
 }
